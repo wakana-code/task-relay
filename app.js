@@ -150,6 +150,7 @@ function validateBackup(value) {
     assert(validText(value.pendingPlan.requestId, 100, true), "計画依頼IDが不正です。");
     assert(validText(value.pendingPlan.prompt, 150000, true), "計画依頼文が不正です。");
   }
+  validateChangeStorage(value);
   return value;
 }
 
@@ -311,6 +312,26 @@ function contextText() {
     );
   }
 
+  const changes = state.changeLog || [];
+  if (changes.length) {
+    lines.push("", "【反映済みの追加指示・変更履歴】");
+    for (const change of changes) {
+      lines.push(
+        `- ${change.createdAt}：${change.instruction}`,
+        `  反映内容：${change.explanation}`
+      );
+    }
+  }
+  const changes = state.changeLog || [];
+  if (changes.length) {
+    lines.push("", "【反映済みの追加指示・変更履歴】");
+    for (const change of changes) {
+      lines.push(
+        `- ${change.createdAt}：${change.instruction}`,
+        `  反映内容：${change.explanation}`
+      );
+    }
+  }
   lines.push("", "この情報が最新状態です。過去の会話と矛盾する進捗・担当状態は、この情報を優先してください。");
   return lines.join("\n");
 }
@@ -674,6 +695,7 @@ function hydrate() {
   $("source").value = state.source;
   $("plan-response").value = "";
   $("plan-exchange").open = Boolean(state.pendingPlan);
+  hydrateChangePanel();
   render();
 }
 

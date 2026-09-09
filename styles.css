@@ -365,6 +365,37 @@ footer {
   font-size: 0.8rem;
 }
 
+#change-preview:not(:empty) {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 2px solid var(--border);
+}
+
+#change-preview > .approval-row {
+  margin: 18px 0 12px;
+}
+
+.change-card {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fafcff;
+}
+
+.change-card summary {
+  overflow-wrap: anywhere;
+}
+
+.change-history-entry {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+#change-exchange .actions {
+  margin-bottom: 16px;
+}
+
 [hidden] {
   display: none !important;
 }
