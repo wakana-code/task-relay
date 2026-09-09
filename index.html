@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Task Relay — 次にやることがわかる仕事管理</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div>
+      <span class="eyebrow">API不要・コピペで進める</span>
+      <h1>Task Relay</h1>
+      <p>計画をタスクに変えて、一つずつ進める。</p>
+    </div>
+    <span class="badge">個人用・試用版 0.1</span>
+  </header>
+
+  <main>
+    <div id="storage-warning" class="notice danger" hidden></div>
+    <div id="message" class="notice" role="status" aria-live="polite" hidden></div>
+
+    <section class="panel">
+      <div class="section-heading">
+        <h2>プロジェクト</h2>
+        <span id="save-state" class="muted"></span>
+      </div>
+      <div class="grid-two">
+        <label>
+          プロジェクト名
+          <input id="project-name" maxlength="120" placeholder="例：新サービスの提案準備">
+        </label>
+        <label>
+          自分の名前・担当名
+          <input id="member-name" maxlength="80" placeholder="例：自分">
+        </label>
+      </div>
+      <label>
+        ChatGPTなどの会話URL
+        <input id="chat-url" type="url" placeholder="https://chatgpt.com/c/...">
+      </label>
+      <p class="help">URLは会話を開くために使います。アプリが会話の内容を読み取ることはありません。別のAIのHTTPS URLも登録できます。</p>
+      <div class="actions">
+        <button id="save-settings">設定を保存</button>
+        <button id="open-chat" class="secondary">登録した会話を開く</button>
+      </div>
+    </section>
+
+    <section class="panel" id="planning-panel">
+      <h2>1. 計画書からタスクを作る</h2>
+      <label>
+        計画書・ラフ案・補足条件
+        <textarea id="source" rows="8" maxlength="60000" placeholder="何を完成させたいか、期限、先方からの指示などを貼り付けてください。ラフでも大丈夫です。"></textarea>
+      </label>
+      <div class="actions">
+        <button id="save-source" class="secondary">計画書を保存</button>
+        <button id="make-plan">初期計画プロンプトを作る</button>
+      </div>
+      <p class="help">この初期版では、タスク作成後の追加指示はまだ取り込めません。作り直す場合はバックアップしてから新規プロジェクトにしてください。</p>
+
+      <details id="plan-exchange">
+        <summary>ChatGPTへの依頼と回答の取り込み</summary>
+        <ol class="steps">
+          <li>下のプロンプトをコピーしてChatGPTなどに送信します。</li>
+          <li>回答全体をコピーして、回答欄に貼り付けます。</li>
+          <li>「検証してタスクを作成」を押します。</li>
+        </ol>
+        <label>
+          初期計画プロンプト
+          <textarea id="plan-prompt" rows="9" readonly></textarea>
+        </label>
+        <div class="actions">
+          <button id="copy-plan" class="secondary">プロンプトをコピー</button>
+          <button id="open-planner" class="secondary">AIの会話を開く</button>
+        </div>
+        <label>
+          AIの回答
+          <textarea id="plan-response" rows="8" placeholder="説明文を含む回答全体を貼り付けられます。"></textarea>
+        </label>
+        <button id="import-plan">検証してタスクを作成</button>
+      </details>
+    </section>
+
+    <section class="panel">
+      <div class="section-heading">
+        <h2>2. タスク一覧</h2>
+        <label class="inline-label">
+          並び順
+          <select id="sort-mode">
+            <option value="recommended">おすすめ順</option>
+            <option value="deadline">締め切り順</option>
+            <option value="priority">重要度順</option>
+          </select>
+        </label>
+      </div>
+      <div id="stats" class="stats"></div>
+      <progress id="progress" max="100" value="0" aria-label="完了率"></progress>
+      <p class="help">おすすめ順では、今着手できる未完了タスクを優先します。各タスクを選べば、順番を変えて作業できます。</p>
+      <div id="task-list" class="task-list"></div>
+    </section>
+
+    <section class="panel" id="work-panel">
+      <div class="section-heading">
+        <h2>3. 次にやること</h2>
+        <button id="select-next" class="secondary">おすすめの未完了タスクへ</button>
+      </div>
+      <div id="work-content"></div>
+    </section>
+
+    <section class="panel">
+      <div class="section-heading">
+        <h2>最新状況</h2>
+        <button id="copy-context" class="secondary">最新状況をコピー</button>
+      </div>
+      <p class="help">進捗はアプリが更新します。AIに渡すときは、この最新状況を使います。待っているだけでChatGPTに同期されるわけではありません。</p>
+      <textarea id="context" rows="12" readonly></textarea>
+    </section>
+
+    <section class="panel">
+      <h2>バックアップ・新規作成</h2>
+      <p class="help">データはこのブラウザに保存されます。ブラウザのデータ削除や、サイトのURL変更で読めなくなる場合があります。重要な作業の前後にバックアップしてください。複数タブでの同時編集は避けてください。</p>
+      <div class="actions">
+        <button id="export-data" class="secondary">バックアップを書き出す</button>
+        <label class="file-button">
+          バックアップを復元
+          <input id="import-backup" type="file" accept=".json,application/json">
+        </label>
+        <button id="reset-project" class="danger-button">新規プロジェクト</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Task Relay 0.1 · AI回答は資料として取り込み、実行コードとして動かしません。
+  </footer>
+</body>
+</html>
